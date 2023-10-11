@@ -57,6 +57,14 @@ db_url =
     "postgres://postgres:postgres@plausible_db:5432/plausible_db"
   )
 
+maintenance_db = get_var_from_path_or_env(config_dir, "MAINTENANCE_DATABASE", "postgres")
+db = get_var_from_path_or_env(config_dir, "DATABASE")
+db_username = get_var_from_path_or_env(config_dir, "DATABASE_USERNAME")
+db_password = get_var_from_path_or_env(config_dir, "DATABASE_PASSWORD")
+db_hostname = get_var_from_path_or_env(config_dir, "DATABASE_HOSTNAME")
+db_port = get_var_from_path_or_env(config_dir, "DATABASE_PORT") |> String.to_integer()
+db_ssl = get_var_from_path_or_env(config_dir, "DATABASE_SSL") == "true"
+
 db_socket_dir = get_var_from_path_or_env(config_dir, "DATABASE_SOCKET_DIR")
 
 super_admin_user_ids =
@@ -261,15 +269,17 @@ db_cacertfile = get_var_from_path_or_env(config_dir, "DATABASE_CACERTFILE", CASt
 
 if is_nil(db_socket_dir) do
   config :plausible, Plausible.Repo,
-    url: db_url,
-    socket_options: maybe_ipv6,
+    maintenance_database: maintenance_db,
+    database: db,
+    username: db_username,
+    password: db_password,
+    hostname: db_hostname,
+    port: db_port,
+    ssl: db_ssl,
     ssl_opts: [
-      cacertfile: db_cacertfile,
-      verify: :verify_peer,
-      customize_hostname_check: [
-        match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
-      ]
-    ]
+      verify: :verify_none
+    ],
+    socket_options: maybe_ipv6,
 else
   config :plausible, Plausible.Repo,
     socket_dir: db_socket_dir,
